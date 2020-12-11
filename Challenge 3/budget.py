@@ -6,12 +6,13 @@ class Category:
 		self.name = name
 		self.ledger = []
 		self.funds = 0.00
+		self.total_withdraw = 0.00
 
 	def __repr__(self):
 		result = f'{self.name.center(30, "*")}\n'
 		
 		for line in self.ledger:
-			result += f'{line["description"][:23].ljust(23)}{str(line["amount"]).rjust(7)}\n'
+			result += '{}'.format(line["description"][:23].ljust(23)) + ' ' + '{:.2f}\n'.format(line["amount"]).rjust(7)
 		
 		result += f"Total: {self.funds}"
 
@@ -34,10 +35,18 @@ class Category:
 		withdraw_dic = {"amount": amount*-1, "description": description}
 		self.ledger.append(withdraw_dic)
 
+		self.total_withdraw += amount
+
 		return True
 
 	def get_balance(self):
 		return self.funds
+
+	def get_name(self):
+		return self.name
+
+	def get_total_withdraw(self):
+		return self.total_withdraw
 
 	def transfer(self, amount, category_to):
 		if not self.check_funds(amount): return False
@@ -61,15 +70,17 @@ def create_spend_chart(categories):
 	max_name_length = 0
 	name_lst = []
 	for category in categories:
-		total_funds += category.get_balance()
-		if len(category.name) > max_name_length:
-			max_name_length = len(category.name)
-		name_lst.append(category.name)
+		total_funds += category.get_total_withdraw()
+		if len(category.get_name()) > max_name_length:
+			max_name_length = len(category.get_name())
+		name_lst.append(category.get_name())
 
 	graph_dic = {}
 	for category in categories:
-		graph_dic[category.name] = int((category.funds * 100 / total_funds) /10) * 10
+		graph_dic[category.name] = int((category.get_total_withdraw() * 100 / total_funds) /10) * 10
+		# print(category.funds)
 
+	print(total_funds)
 
 	result = "Percentage spent by category\n"
 	for n in range(100,-1,-10):
@@ -101,23 +112,6 @@ def create_spend_chart(categories):
 		result +='\n'	
 
 
-	result = result[:-2]
+	result = result[:-1]
 
 	return result
-
-
-food = Category("food")
-print(food.get_balance())
-print(food.deposit(1000, "ingreso 1"))
-print(food.get_balance())
-cloths = Category("cloths")
-food.transfer(310.80, cloths)	
-
-print(f"Food Balance {food.get_balance()}")
-print(f"Cloths Balance {cloths.get_balance()}")
-
-auto = Category("auto")
-print(auto.deposit(500, "ingreso 2"))
-auto.withdraw(100, "rueda")
-
-print(create_spend_chart([food, cloths, auto]))
