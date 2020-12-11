@@ -7,3 +7,7 @@
 ## 2 - Time Calculator
 
 #### Write a function named "add_time" that can add a duration to a start time and return the result.
+
+## 3 - Budget App
+
+#### Create a "Category" class that can be used to create different budget categories.
