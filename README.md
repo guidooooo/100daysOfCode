@@ -16,6 +16,6 @@
 
 #### In this project you will use object oriented programming to create a Rectangle class and a Square class. The Square class should be a subclass of Rectangle and inherit methods and attributes.
 
-## 4 - Probability Calculator
+## 5 - Probability Calculator
 
 #### Write a program to determine the approximate probability of drawing certain balls randomly from a hat.
