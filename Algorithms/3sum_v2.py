@@ -27,11 +27,12 @@ def threeSum(nums):
                 elif sum_nums<0:
                     j += 1
                 else:
-                    result.append([nums[n], nums[j], nums[m]]) 
+                    new_result = [nums[n], nums[j], nums[m]]
+                    if new_result not in result:
+                        result.append(new_result) 
                     j += 1
-                    continue
                 
         return result
 
-print(threeSum([-1,0,1,2,-1,-4,-2,-3,3,0,4]))
+print(threeSum([0,0,0,0]))
 
