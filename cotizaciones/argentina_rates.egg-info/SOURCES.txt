@@ -1,0 +1,12 @@
+README.md
+setup.py
+argentina_rates/__init__.py
+argentina_rates/argentina_rates.py
+argentina_rates/connections.py
+argentina_rates/myfunctions.py
+argentina_rates/sources.py
+argentina_rates.egg-info/PKG-INFO
+argentina_rates.egg-info/SOURCES.txt
+argentina_rates.egg-info/dependency_links.txt
+argentina_rates.egg-info/top_level.txt
+test/test_myfunctions.py
