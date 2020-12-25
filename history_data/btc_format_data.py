@@ -236,7 +236,7 @@ def backup_csv_file(file):
 def connectMongo():
 
 	user = "cloudUser"
-	password = "Fsn4o0IUOdhagBfg"
+	password = "xx "
 	dbname = "carrascosa"
 	clusterName = "houseman"
 	client = MongoClient(f"mongodb+srv://{user}:{password}@{clusterName}.pkjzy.mongodb.net/{dbname}?retryWrites=true&w=majority")
