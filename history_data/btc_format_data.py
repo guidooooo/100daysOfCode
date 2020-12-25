@@ -8,11 +8,23 @@ from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import requests
 import json
 import time
-import datetime
+from datetime import datetime
 
 #google spreadsheet libraries
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+
+# mongo connection
+from pymongo import MongoClient
+import config
+
+# Files names
+btc_price_hist_file = 'btc_history_date.csv'
+usd_price_hist_file = "dolar_history.csv"
+
+
+from shutil import copyfile
+
 
 
 ###############################
@@ -55,20 +67,23 @@ def get_btc_purchases():
 
 
 ###############################
-### funcion que lee el .csv con el valor historico del btc
+### funcion que formatea la columna date de un dataframe a datetime
 ###############################
-
-btc_price_hist_file = 'btc_history_date.csv'
 
 def pd_format_date_column(df):
 
 	df['date'] = pd.to_datetime(df['date'], unit='s').apply(lambda x: x.date())
 	return  df
 
-def get_btc_price_hist():
+###############################
+### funcion que lee un archivo csv y lo pasa a un dataframe panda
+###############################
+
+def get_price_hist(currency):
 
 	# Reading btc historical file
-	df = pd.read_csv(btc_price_hist_file)
+	file = get_file_name(currency)
+	df = pd.read_csv(file)
 	df = df[df.columns[0:2]]
 	# #print(df)
 	columns = ['date','price']
@@ -84,11 +99,16 @@ def get_btc_price_hist():
 
 
 ###############################
-### funcion que devuelve la ultima fecha que tiene el csv de BTC_PRICE
+### funcion que devuelve el max index de un dataframe
 ###############################
-def get_btc_price_last_date(df):
+def get_price_last_date(df):
 
 	return df.index.max()
+
+
+###############################
+### funcion que trae info del valor del BTC desde la fecha pasada como parametro
+###############################
 
 def get_newest_btc_prices(from_date):
 
@@ -109,64 +129,150 @@ def get_newest_btc_prices(from_date):
 		
 		print(resp.raise_for_status())
 		data = resp.json()
-		return pd.DataFrame.from_dict(data)
+		
+		df = pd.DataFrame.from_dict(data)
+
+		# getting api list
+		lst_api = df.loc['86400'].loc['result']
+
+		# getting just the data I need
+		lst_prices = [x[0:2] for x in lst_api] 
+
+		# getting index for the dataframe
+		indexes = [x[0] for x in lst_api]
+
+		df_api = pd.DataFrame(lst_prices,  columns = ['date','price'])
+
+		# formating dataframe column
+		df_api = df_api.astype({"date": int, "price": float})
+		# casting timestamp column to date
+		df_api = pd_format_date_column(df_api)
+		# setting date as index
+		df_api = df_api.set_index('date')
+
+		return df_api
 
 	except (ConnectionError, Timeout, TooManyRedirects) as e:
 			sys.exit(e)
 
+###############################
+### funcion que trae info del valor del USD Blue desde la fecha pasada como parametro
+###############################
+def get_newest_usd_prices(from_date):
 
-	
+	lst_prices = []
+
+	#after =  datetime. strptime(from_date, '%Y-%m-%d')
+	after = from_date
+
+	col = connectMongo()
+
+	myquery = { "fuente": "Blue_dolarSi", "par": "USD-ARS", "fecha" : { "$gt": after} }
+
+	for x in col.find(myquery):
+  		lst_prices.append([x['fecha'], x['cotizacionCompra']])
+
+	df_usd_prices = pd.DataFrame(lst_prices,  columns = ['date','price'])
+	df_usd_prices = df_usd_prices.astype({"date": 'datetime64', "price": 'float'})
+
+	df_usd_prices['date'] = df_usd_prices['date'].dt.round('D') 
+
+	df_usd_prices = df_usd_prices.set_index('date')
+
+	df_usd_prices = df_usd_prices.groupby(['date']).mean() 
+
+	return df_usd_prices
+
+def get_file_name(currency):
+
+	if currency.upper() == 'BTC':
+		return btc_price_hist_file
+	elif currency.upper() == 'USD':
+		return usd_price_hist_file
+	else:
+		return False
 
 
 ###############################
-### funcion que actualiza el csv con los precios del BTC
+### funcion que actualiza el csv con los precios del BTC y USD_BLUE segun parametro currency
 ###############################
-def update_btc_price_hist():
+def update_price_hist(currency):
 
 	# getting csv file into dataframe
-	df_hist = get_btc_price_hist()
+	df_hist = get_price_hist(currency)
 
 	#droping last 2 days from dataframe
 	df_hist.drop(df_hist.tail(2).index,inplace=True) # drop last n rows
 
 	# getting max_date loaded
-	max_date = get_btc_price_last_date(df_hist)
-
+	max_date = get_price_last_date(df_hist)
 
 	#getting btc price since last 2 days til today
-	df_btc_api = get_newest_btc_prices(max_date)
+	if currency == 'BTC':
+		df_api = get_newest_btc_prices(max_date)
+		
+	elif currency == 'USD':
+		df_api = get_newest_usd_prices(max_date)
+	
+	df_final = pd.concat([df_hist, df_api])
 
-	# getting api list
-	lst_api = df_btc_api.loc['86400'].loc['result']
-
-	# getting just the data I need
-	lst_prices = [x[0:2] for x in lst_api] 
-
-	# getting index for the dataframe
-	indexes = [x[0] for x in lst_api]
-
-	# creating dataframe from LST_PRICES
-	df_btc_new_prices = pd.DataFrame(lst_prices,  columns = ['date','price'])
-	# formating dataframe column
-	df_btc_new_prices = df_btc_new_prices.astype({"date": int, "price": float})
-	# casting timestamp column to date
-	df_btc_new_prices = pd_format_date_column(df_btc_new_prices)
-	# setting date as index
-	df_btc_new_prices = df_btc_new_prices.set_index('date')
-
-	df_final = pd.concat([df_hist, df_btc_new_prices])
-
-	df_final.to_csv(btc_price_hist_file)
-
+	#backup the file before update it
+	file = get_file_name(currency)
+	backup_csv_file(file)
+	
+	#saving csv
+	df_final.to_csv(file)
 
 	return True
 
-#update_btc_price_hist()
+def backup_csv_file(file):
+	
+	return copyfile(file, file + '.bkp')
 
-df_spreadsheet = get_btc_purchases()
-df_btcusd = get_btc_price_hist()
+#########################
+## funcion que se conecta a mongo y te devuelve la coleccion con las cotizaciones
+#########################
+
+def connectMongo():
+
+	user = "cloudUser"
+	password = "Fsn4o0IUOdhagBfg"
+	dbname = "carrascosa"
+	clusterName = "houseman"
+	client = MongoClient(f"mongodb+srv://{user}:{password}@{clusterName}.pkjzy.mongodb.net/{dbname}?retryWrites=true&w=majority")
+
+	database = "ripio"
+	collection = "rates"
+
+	db = client[database]
+	col = db[collection]
+
+	return col
 
 
-print(df_spreadsheet.join(df_btcusd))
+def do_the_maths():
 
+	df_spreadsheet = get_btc_purchases()
+	df_usd = get_price_hist("USD")
+	df_usd = df_usd.rename(columns={'price': 'usd_price'})
+	df1 = df_spreadsheet.join(df_usd)
+
+	df_btc = get_price_hist("BTC")
+	df_btc = df_btc.rename(columns={'price': 'btc_price'})
+
+	df2 = df1.join(df_btc, on='date', how="left")
+
+	df2['usd_amount'] = df2['ars'] / df2['usd_price']
+
+	print(df2)
+
+	current_btc_price = float(df_btc.loc[df_btc.index.max()].values[0])
+
+	btc_stock = df2['btc'].sum()
+
+	print("Supuestos dolares:", df2['usd_amount'].sum()) 
+	print("Actuales por conversion:", current_btc_price*btc_stock)
+
+
+do_the_maths()
 
