@@ -4,6 +4,7 @@ import numpy as np
 
 import sys
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+
 import os
 
 import requests
@@ -26,10 +27,7 @@ usd_price_hist_file = "dolar_history.csv"
 
 from shutil import copyfile
 
-
 #from calendar_function import update_calendar_csv
-
-
 
 ###############################
 ### funcion que devuelve la info de la spreadsheet con las compras 
@@ -40,9 +38,11 @@ def get_btc_purchases():
 	scope = ['https://spreadsheets.google.com/feeds',
 	         'https://www.googleapis.com/auth/drive']
 
+
 	json_path = os.getenv('GOOGLEJSON')
 
 	credentials = ServiceAccountCredentials.from_json_keyfile_name('../../../pythontest-287600-bc8175120fd6.json', scope)
+
 
 	gc = gspread.authorize(credentials)
 
@@ -91,7 +91,6 @@ def get_price_hist(currency):
 	file = get_file_name(currency)
 	df = pd.read_csv(file)
 	df = df[df.columns[0:2]]
-	
 	columns = ['date','price']
 	df.columns = columns
 
@@ -239,12 +238,10 @@ def backup_csv_file(file):
 
 def connectMongo():
 
-
 	user = os.getenv('MONGOUSER')
 	password = os.getenv('MONGOPW')
 	dbname = os.getenv('MONGODB')
 	clusterName = os.getenv('MONNGOCLUSTER')
-
 	client = MongoClient(f"mongodb+srv://{user}:{password}@{clusterName}.pkjzy.mongodb.net/{dbname}?retryWrites=true&w=majority")
 
 	database = "ripio"
@@ -290,5 +287,5 @@ def do_the_maths(update_fg = False):
 	print("Actuales por conversion:", current_btc_price*btc_stock)
 
 
-do_the_maths()
+do_the_maths(True)
 
