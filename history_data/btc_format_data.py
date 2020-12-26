@@ -91,7 +91,7 @@ def get_price_hist(currency):
 	file = get_file_name(currency)
 	df = pd.read_csv(file)
 	df = df[df.columns[0:2]]
-	# #print(df)
+	
 	columns = ['date','price']
 	df.columns = columns
 
