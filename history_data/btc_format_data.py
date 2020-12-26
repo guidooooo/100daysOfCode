@@ -26,6 +26,9 @@ usd_price_hist_file = "dolar_history.csv"
 from shutil import copyfile
 
 
+from calendar_function import update_calendar_csv
+
+
 
 ###############################
 ### funcion que devuelve la info de la spreadsheet con las compras 
@@ -236,7 +239,7 @@ def backup_csv_file(file):
 def connectMongo():
 
 	user = "cloudUser"
-	password = "xx "
+	password = "xx"
 	dbname = "carrascosa"
 	clusterName = "houseman"
 	client = MongoClient(f"mongodb+srv://{user}:{password}@{clusterName}.pkjzy.mongodb.net/{dbname}?retryWrites=true&w=majority")
@@ -250,7 +253,17 @@ def connectMongo():
 	return col
 
 
-def do_the_maths():
+def do_the_maths(update_fg = False):
+
+	if update_fg:
+		#actualizo el csv de fechas
+		#update_calendar_csv()
+		#actualizo el csv de btc price
+		update_price_hist('BTC')
+		#actualizo el csv de usd price
+		update_price_hist('USD')
+
+
 
 	df_spreadsheet = get_btc_purchases()
 	df_usd = get_price_hist("USD")
@@ -274,5 +287,5 @@ def do_the_maths():
 	print("Actuales por conversion:", current_btc_price*btc_stock)
 
 
-do_the_maths()
+do_the_maths(True)
 
