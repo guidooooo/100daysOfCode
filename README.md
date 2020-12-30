@@ -19,3 +19,7 @@
 ## 5 - Probability Calculator
 
 #### Write a program to determine the approximate probability of drawing certain balls randomly from a hat.
+
+## 6 - Mean-Variance-Standard Deviation Calculator
+
+#### Create a function that uses Numpy to output the mean, variance, and standard deviation of the rows, columns, and elements in a 3 x 3 matrix.
