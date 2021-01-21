@@ -357,11 +357,20 @@ class Tx:
 		return hash256(self.serialize())[::-1]
 
 	@classmethod
-	def parse(cls, steam):
-		serialized_version = stream.read(4)
+	def parse(cls, s):
+		serialized_version = s.read(4)
 		version = int_to_little_endian(serialized_version, 4).hex()
+		num_inputs = read_varint(s)
+		inputs = []
+		for _ in range(num_inputs):
+			inputs.append(TxIn.parse(s))
+		num_outputs = read_varint(s)
+		outputs = []
+		for _ in range(num_outputs):
+			outputs.append(Txout.parse(s))
+		locktime = int_to_little_endian(s.read(4))
 
-		return cls(version, None, None, None, testnet=testnet)
+		return cls(version, inputs, outputs, locktime, testnet=testnet)
 
 
 class Txin:
@@ -379,9 +388,32 @@ class Txin:
 		return f'{self.prev_tx.hex()}:{self.prev_index}'
 
 	@classmethod
-	def parse(cls, steam):
-		
+	def parse(cls, s):
+		'''Takes a byte stream and parses the tx_input at the start.
+		Returns a TxIn object.
+		'''
 
+		prev_tx = s.read(32)[::-1]
+		prev_index = little_endian_to_int(s.read(4))
+		script_sig = Script.parse(s)
+		sequence = little_endian_to_int(s.read(4))
+		return cls(prev_tx, prev_index, script_sig, sequence)	
+
+class Txout:
+
+	def __init__(self, amount, script_pubkey):
+		self.amount = amount
+		self.script_pubkey = script_pubkey
+
+	def __repr__(self):
+		return f"{self.amount}:{self.script_pubkey}"
+
+
+	@classmethod
+	def parse(cls, s):
+		amount = little_endian_to_int(s.read(8))
+		script_pubkey = Script.parse(s)
+		return cls(amount, script_pubkey)
 			
 class ECCTest(TestCase):
 

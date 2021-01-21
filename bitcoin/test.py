@@ -1,4 +1,4 @@
-from ecc import PrivateKey, Signature
+import ecc
 from helper import hash256, encode_base58, little_endian_to_int, int_to_little_endian
 # e = int.from_bytes(hash256(b'my secret'), 'big')  # <1>
 # z = int.from_bytes(hash256(b'my message'), 'big')  # <2>
@@ -14,5 +14,5 @@ from helper import hash256, encode_base58, little_endian_to_int, int_to_little_e
 
 #print(priv.point.address(compressed = True, testnet=True))
 
-
-print(int_to_little_endian(1, 4).hex())
+s = b"sdsdsjdsjsjd"
+ecc.Tx.parse(s)
